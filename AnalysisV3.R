@@ -1,22 +1,17 @@
-# TO Analaysis 
+# Script by Lewis J Bartlett - lewis.bartlett@uga.edu
+# Maintained at https://github.com/LBartlett/TORD-21.git
 
-# Should be ready to smash out some analysis
+# Load packages and data
 
 library(afex)
 library(frailtypack)
 
-# Let's do mirrored analyses for each experiment as they ultimately are different
-
-# TO.Data <- read.csv(file = 'C:/Users/ljb87745/Google Drive/PostDoc2/TORD/TOData.csv',
-#                        header = TRUE, stringsAsFactors = FALSE)
-
-TO.Data <- read.csv(file = 'D:/Google Drive/PostDoc2/TORD/TOData.csv',
+TO.Data <- read.csv(file = 'TOData.csv',
                     header = TRUE, stringsAsFactors = FALSE)
-
 
 #####################
 
-# TO first
+# Begin data manipulation for plotting and analysis
 
 TO.PC.SSM <- data.frame('Colony' = sort(rep(unique(TO.Data$Colony), times = NROW(unique(TO.Data$Wave[which(!is.na(TO.Data$SSMites))])))), 
                         'Wave' = rep(unique(TO.Data$Wave[which(!is.na(TO.Data$SSMites))]), times = NROW(unique(TO.Data$Colony)))
@@ -58,7 +53,7 @@ Transpa <- function(color, percent) {
   return(t.col)
 }
 
-#plot SS per colony through Yards
+#plot StickyScreen counts per colony through Yards
 
 Shading <- c('lightblue2','orange1','purple1','red3','darkblue','gold2','green3','pink3','black','grey3')
 
@@ -104,6 +99,10 @@ for(Y in unique(TO.PC.SSM$Yard)){
 }
 
 #####################
+
+# Filter down data
+
+
 PC.SSM <- TO.PC.SSM
 
 PC.SSM <- PC.SSM[which(PC.SSM$Wave < 7),]
@@ -145,6 +144,8 @@ GrowthCor$SG <- NA
 GrowthCor$EG <- NA
 GrowthCor$Total <- NA
 
+# Models to estimate growth rates
+
 for(C in 1:NROW(GrowthCor)){
   
   Yard <- GrowthCor$Yard[C]
@@ -163,6 +164,8 @@ for(C in 1:NROW(GrowthCor)){
                                  data = PS.TM[which(PS.TM$Yard == Yard),]))[[1]]
   
 }
+
+# Plots and analyses
 
 par(mfrow = c(1,1))
 
@@ -231,9 +234,8 @@ frailtyPenal(formula = Surv(TTE,Died, type = 'right') ~ Treatment + cluster(Yard
 
 
 
-#########################
-### Survival plot
-#########################
+# Survival plot (requires some rearranging)
+
 TO.Surv.Frame <- data.frame('Yard' = rep(unique(TO.Data$Yard), times =23), 
                             'Wave' = rep(2:24, times = NROW(unique(TO.Data$Yard)))
 )
@@ -304,7 +306,7 @@ for(Y in unique(TO.Surv.Frame$Yard)){
 }
 
 
-#### Additional AW bit
+#### Additional alcohol wash bit
 
 #
 TO.AW <- TO.Data[which(!is.na(TO.Data$AWMites)),c('Colony','Yard','Inoculated','AWMites')]
