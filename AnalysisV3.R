@@ -306,7 +306,7 @@ for(Y in unique(TO.Surv.Frame$Yard)){
 }
 
 
-#### Additional alcohol wash bit
+#### Additional alcohol wash correlation data/plot
 
 #
 TO.AW <- TO.Data[which(!is.na(TO.Data$AWMites)),c('Colony','Yard','Inoculated','AWMites')]
