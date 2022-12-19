@@ -102,7 +102,6 @@ for(Y in unique(TO.PC.SSM$Yard)){
 
 # Filter down data
 
-
 PC.SSM <- TO.PC.SSM
 
 PC.SSM <- PC.SSM[which(PC.SSM$Wave < 7),]
@@ -223,15 +222,15 @@ for(N in 1:NROW(FrailDat)){
   
 }
 
-FrailDat$Died[which(FrailDat$TTE > 12)] <- FALSE
-FrailDat$TTE[which(FrailDat$TTE > 12)] <- 12
+FrailDat$Died[which(FrailDat$TTE > 18)] <- FALSE
+FrailDat$TTE[which(FrailDat$TTE > 18)] <- 18
 
 library(frailtypack)
 
-frailtyPenal(formula = Surv(TTE,Died, type = 'right') ~ Treatment + cluster(Yard),
-             n.knots = 6, kappa = 10000,
-             data=FrailDat)
-
+FM <- frailtyPenal(formula = Surv(TTE,Died, type = 'right') ~ Treatment + cluster(Yard),
+                   n.knots = 6, kappa = 6000,
+                   data=FrailDat)
+FM
 
 
 # Survival plot (requires some rearranging)
@@ -279,8 +278,13 @@ Transpa <- function(color, percent) {
   
 }
 
-
 TO.Surv.Frame$PropSurv <- TO.Surv.Frame$SurvWave/12
+
+# for(nr in 1:NROW(TO.Surv.Frame)){
+#   
+#   TO.Surv.Frame$PropSurv[nr] <- TO.Surv.Frame$SurvWave[nr] / max(TO.Surv.Frame$SurvWave[which(TO.Surv.Frame$Yard == TO.Surv.Frame$Yard[nr])])
+#   
+# }
 
 P1 <- (0:10)/10
 P2 <- 2:12
@@ -304,6 +308,7 @@ for(Y in unique(TO.Surv.Frame$Yard)){
         type = 's', pch = 19, lwd = 6, cex = 1.4)
   
 }
+
 
 
 #### Additional alcohol wash correlation data/plot
@@ -347,4 +352,70 @@ plot(log(TO.AW$AWMites+1) ~ log(TO.AW$PSS+1),
      xlab = 'Mite Population Size (log+1 transformed)',
      pch = 20, cex = 1.5, cex.lab = 1.8, cex.axis = 1.5
 )
+
+
+
+### Reviewer point - does PCM predict overwinter death?
+
+AW2 <- TO.AW
+
+AW2$Died <- NA
+
+for(j in 1:NROW(AW2)){
+  
+  AW2$Died[j] <- FrailDat$Died[which(FrailDat$Colony == AW2$Colony[j])]
+  
+}
+
+mixed(Died ~ AWMites + (1|Yard),
+      family = 'binomial',
+      method = 'LRT',
+      data = AW2)
+
+summary(mixed(Died ~ AWMites + (1|Yard),
+              family = 'binomial',
+              method = 'LRT',
+              data = AW2)
+)
+
+# Yes, it does, as expected
+
+##### Reviewer points
+
+## Survival plot is not easy to digest / process, try a simpler correlation to show outcome
+
+GC2 <- GrowthCor
+
+GC2$SurvReg <- NA
+
+for(i in 1:NROW(GC2)){
+  
+  YardSub <- TO.Surv.Frame[which(TO.Surv.Frame$Yard == GC2$Yard[i] & TO.Surv.Frame$Wave < 18),]
+  
+  TR <- glm(cbind(DeadWave, SurvWave) ~ Wave,
+            family = 'binomial',
+            data = YardSub)
+  
+  GC2$SurvReg[i] <- as.numeric(coef(TR)[2])
+  
+}
+
+plot(GC2$SurvReg~GC2$SG)
+
+## Pretty it up
+
+plot(GC2$SurvReg ~ GC2$SG,
+     pch = 20, cex = 1.8,
+     ylab = 'Colony Mortality Odds (Exposed)',
+     xlab = 'Mite Growth Coefficient (Inoculated)',
+     cex.lab = 1.25,
+     cex.axis = 1.25)
+
+lines(x= c(0.55, 1.4), 
+      y = predict(lm(SurvReg ~ SG, data = GC2), newdata=data.frame(SG=c(0.55, 1.4))),
+      lwd = 3,
+      lty = 2)
+
+
+
 
